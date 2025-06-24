@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2024 University of Manchester
+#
+# SPDX-License-Identifier: apache-2.0
+
+name: Run clang-format and commit
+on:
+    push:
+
+jobs:
+    clang-format:
+      permissions:
+        contents: write
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Format
+          run: |
+            if [[ `find . -print | grep -E '\.cpp|\.cc|\.cp|\.c\+\+|\.cxx|\.c' | wc -l` ]]; then
+              echo "Files found. Formatting."
+              find . -print | grep -E '\.cpp|\.cc|\.cp|\.c\+\+|\.cxx|\.c' | xargs clang-format -i
+            else
+              echo "No files found"
+            fi
+
+        - name: Commit
+          env:
+            GH_TOKEN: ${{ github.token }}
+
+          run: |
+            if [[ `git status --porcelain` ]]; then
+              echo "Changes detected."
+              git config --global user.email "no-reply@github.com"
+              git config --global user.name "GitHub Actions"
+              git add -A
+              git commit -a -m "Format code with clang-format"
+              git push
+            else
+              echo "No changes were detected."
+            fi
+
+ 
